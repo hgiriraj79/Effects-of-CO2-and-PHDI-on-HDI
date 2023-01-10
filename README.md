@@ -2,7 +2,7 @@
 
 #### Introduction
 - This project is created to analyse the effects of CO2 and PHDI on HDI.
-- In this project I have made use of Linear Regression to observe the impact of CO2 and PHDI on HDI and perform a descriptive statistical analysis of the data present in the dataset. Lastly, I have performed a t.test to perform hypothesis testing to check if there is a difference in HDI between three decades.
+- In this project I have made use of Linear Regression to observe the impact of CO2 and PHDI on HDI and performed a descriptive statistical analysis of the data present in the dataset. Lastly, I have performed a t.test to perform hypothesis testing to check if there is a difference in HDI between three decades.
 
 ### Files:
 
