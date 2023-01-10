@@ -1,0 +1,109 @@
+---
+title: "RCode"
+author: "Giriraj"
+date: "2023-01-10"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(dplyr)
+```
+
+```{r}
+# load the data
+library(readr)
+HDI_data <- read_csv("dataset/HDI.csv")
+
+# inspect the data
+# head(HDI_data)
+
+# data cleaning by dropping unnecessary columns
+# get all column names
+columns <- colnames(HDI_data)
+# extract indices of columns with information of 1990 only
+col_1990_idx <- str_detect(columns, "1990")
+# extract indices of columns with information of 2020 only
+col_2020_idx <- str_detect(columns, "2020")
+col_90_20_idx <- col_2020_idx + col_1990_idx
+
+
+# get the 2020 and 2021 data under selected columns, where 2 represents the country and 3 represents the HD group
+HDI_90_20 <- HDI_data[, c(2, 3, which(col_90_20_idx == 1))]
+# colnames(HDI_90_20)
+
+
+# 1990 and 2020 HDI data with respect to the 2 factors of interest
+# HDI_90_20_data <- HDI_90_20[, c(2, 3, 4, 5, 6, 9, 10, 11, 12, 55, 56)]
+HDI_90_20_data <- HDI_90_20[, c(3, 4, 55, 56, 51, 52, 47, 48, 49, 50)]
+
+# set new column names
+colnames(HDI_90_20_data) <- c("HDI.1990", "HDI.2020", "CO2Emission.1990", "CO2Emission.2020", "PlanetAdjustedHDI.1990", "PlanetAdjustedHDI.2020", "LaborForceF.1990", "LaborForceF.2020", "LaborForceM.1990", "LaborForceM.2020")
+
+# merge the data of two years
+HDI_90_20_combined <- HDI_90_20_data %>% pivot_longer(everything(), 
+                 names_to = c(".value", "Year"), 
+                 names_pattern = "([^\\.]*)\\.*(\\d{4})")
+
+# HDI_90_20_combined_g <- HDI_90_20_combined %>% pivot_longer(cols = -c(1, 2, 3, 4), 
+#                  names_to = "Gender", 
+#                  values_to = "LaborForce")
+
+# This is the dataset for the linear regression model
+HDI_90_20_combined_valid <- na.omit(HDI_90_20_combined)
+
+# This is the dataset for paired t-test
+HDI_90_20_valid <- na.omit(HDI_90_20_data)
+
+
+# head(HDI_90_20_data)
+# head(HDI_90_20_combined, 10)
+
+```
+
+```{r}
+# linear regression on the 1990 and 2020 HDI
+
+# we are not including the labor force feature in the regression model so ignore this one
+# HDI_90_20_lr <- lm(HDI ~ CO2Emission + PlanetAdjustedHDI + LaborForceF + LaborForceM, data = HDI_90_20_combined_valid)
+# summary(HDI_90_20_lr)
+
+HDI_90_20_lr <- lm(HDI ~ CO2Emission + PlanetAdjustedHDI, data = HDI_90_20_combined_valid)
+summary(HDI_90_20_lr)
+
+
+# two-sample t-test
+t.test(HDI_90_20_valid$HDI.2020, HDI_90_20_valid$HDI.1990, paired = T, alternative = "greater", conf.level = 0.95)
+
+# t-test statistics
+meandiff <- mean(HDI_90_20_valid$HDI.2020) - mean(HDI_90_20_valid$HDI.1990)
+meandiff
+sddiff <- sqrt((sd(HDI_90_20_valid$HDI.2020)**2 + sd(HDI_90_20_valid$HDI.1990)**2) /2)
+```
+
+
+```{r}
+# desciptive statistics
+HDI_90_20_combined_valid %>% group_by(Year) %>% summarise(HDIMean = mean(HDI), HDISD = sd(HDI), CO2Mean = mean(CO2Emission), CO2SD = sd(CO2Emission), PAHDIMean = mean(PlanetAdjustedHDI), PAHDISD = sd(PlanetAdjustedHDI), LFFMean = mean(LaborForceF), LFFSD = sd(LaborForceF), LFMMean = mean(LaborForceM), LFMSD = sd(LaborForceM))
+
+# scatter plot of matrices
+library(psych)
+suppressWarnings({
+pairs.panels(HDI_90_20_combined_valid[, -c(1, 5, 6)],
+            method = "pearson",
+            hist.color = "#00AFBB",
+            density = T,
+            lm = T)
+})
+
+# cor.test(HDI_90_20_combined_valid$CO2Emission, HDI_90_20_combined_valid$PlanetAdjustedHDI, method="pearson")
+# cor.test(HDI_90_20_combined_valid$CO2Emission, HDI_90_20_combined_valid$LaborForceF, method="pearson")
+# cor.test(HDI_90_20_combined_valid$CO2Emission, HDI_90_20_combined_valid$LaborForceM, method="pearson")
+```
+
